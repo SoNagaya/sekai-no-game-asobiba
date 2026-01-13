@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>クリックカウンター｜世界のゲームアソビバ</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="topbar">
+        <a class="btn" href="../../index.html">← ゲーム一覧へ</a>
+        <h1>クリックカウンター</h1>
+      </div>
+
+      <div class="game-card">
+        <p>ボタンを押すたびにカウントが増えます。</p>
+
+        <button id="btn">クリック！</button>
+        <p style="font-size:32px; margin-top:10px;">
+          回数：<span id="count">0</span>
+        </p>
+
+        <button id="reset">リセット</button>
+      </div>
+    </div>
+
+    <script>
+      let count = 0;
+
+      const btn = document.getElementById("btn");
+      const reset = document.getElementById("reset");
+      const countEl = document.getElementById("count");
+
+      function render() {
+        countEl.textContent = count;
+      }
+
+      btn.addEventListener("click", () => {
+        count++;
+        render();
+      });
+
+      reset.addEventListener("click", () => {
+        count = 0;
+        render();
+      });
+    </script>
+  </body>
+</html>
