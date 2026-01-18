@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>○×ゲーム｜世界のゲームアソビバ</title>
+
+    <!-- 共通CSS -->
+    <link rel="stylesheet" href="../../assets/css/style.css">
+
+    <style>
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, 80px);
+        grid-template-rows: repeat(3, 80px);
+        gap: 8px;
+        justify-content: center;
+        margin: 20px auto;
+      }
+      .cell {
+        background: #eef2ff;
+        border-radius: 12px;
+        font-size: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        user-select: none;
+      }
+      .cell.disabled {
+        pointer-events: none;
+        opacity: 0.6;
+      }
+      .status {
+        text-align: center;
+        font-size: 16px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="topbar">
+        <a class="btn" href="../../index.html">← ゲーム一覧へ</a>
+        <h1>○×ゲーム</h1>
+      </div>
+
+      <div class="game-card">
+        <div class="board" id="board"></div>
+
+        <div class="status" id="status">
+          ○の番です
+        </div>
+
+        <div style="margin-top:12px;">
+          <button id="reset">リセット</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const boardEl = document.getElementById("board");
+      const statusEl = document.getElementById("status");
+      const resetBtn = document.getElementById("reset");
+
+      let board = Array(9).fill(null);
+      let current = "○";
+      let gameOver = false;
+
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+
+      function checkWinner() {
+        for (const pattern of winPatterns) {
+          const [a,b,c] = pattern;
+          if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return board[a];
+          }
+        }
+        if (board.every(cell => cell)) return "draw";
+        return null;
+      }
+
+      function render() {
+        boardEl.innerHTML = "";
+        board.forEach((value, index) => {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.textContent = value ? value : "";
+
+          cell.addEventListener("click", () => {
+            if (gameOver || board[index]) return;
+
+            board[index] = current;
+            const result = checkWinner();
+
+            if (result === "draw") {
+              statusEl.textContent = "引き分けです";
+              gameOver = true;
+            } else if (result) {
+              statusEl.textContent = result + " の勝ち！";
+              gameOver = true;
+            } else {
+              current = current === "○" ? "×" : "○";
+              statusEl.textContent = current + " の番です";
+            }
+            render();
+          });
+
+          if (board[index]) {
+            cell.classList.add("disabled");
+          }
+
+          boardEl.appendChild(cell);
+        });
+      }
+
+      resetBtn.addEventListener("click", () => {
+        board = Array(9).fill(null);
+        current = "○";
+        gameOver = false;
+        statusEl.textContent = "○の番です";
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
