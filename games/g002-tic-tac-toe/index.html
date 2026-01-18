@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>○×ゲーム｜世界のゲームアソビバ</title>
+    <title>○×ゲーム（CPU対戦）｜世界のゲームアソビバ</title>
 
     <!-- 共通CSS -->
     <link rel="stylesheet" href="../../assets/css/style.css">
@@ -15,7 +15,7 @@
         grid-template-rows: repeat(3, 80px);
         gap: 8px;
         justify-content: center;
-        margin: 20px auto;
+        margin: 18px auto 8px;
       }
       .cell {
         background: #eef2ff;
@@ -29,12 +29,18 @@
       }
       .cell.disabled {
         pointer-events: none;
-        opacity: 0.6;
+        opacity: 0.65;
       }
       .status {
         text-align: center;
         font-size: 16px;
-        margin-top: 10px;
+        margin-top: 8px;
+      }
+      .hint {
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+        margin-top: 6px;
       }
     </style>
   </head>
@@ -43,17 +49,16 @@
     <div class="container">
       <div class="topbar">
         <a class="btn" href="../../index.html">← ゲーム一覧へ</a>
-        <h1>○×ゲーム</h1>
+        <h1>○×ゲーム（CPU対戦）</h1>
       </div>
 
       <div class="game-card">
         <div class="board" id="board"></div>
 
-        <div class="status" id="status">
-          ○の番です
-        </div>
+        <div class="status" id="status">あなた（○）の番です</div>
+        <div class="hint">CPUはランダムに打ちます（まずは弱め）</div>
 
-        <div style="margin-top:12px;">
+        <div style="margin-top: 12px;">
           <button id="reset">リセット</button>
         </div>
       </div>
@@ -64,54 +69,100 @@
       const statusEl = document.getElementById("status");
       const resetBtn = document.getElementById("reset");
 
+      // 盤面：null / "○" / "×"
       let board = Array(9).fill(null);
-      let current = "○";
       let gameOver = false;
 
       const winPatterns = [
-        [0,1,2],[3,4,5],[6,7,8],
-        [0,3,6],[1,4,7],[2,5,8],
-        [0,4,8],[2,4,6]
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
       ];
 
       function checkWinner() {
-        for (const pattern of winPatterns) {
-          const [a,b,c] = pattern;
+        for (const [a, b, c] of winPatterns) {
           if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-            return board[a];
+            return board[a]; // "○" or "×"
           }
         }
-        if (board.every(cell => cell)) return "draw";
+        if (board.every((cell) => cell !== null)) return "draw";
         return null;
+      }
+
+      function cpuMove() {
+        // 空いているマスのindexを列挙
+        const empty = board
+          .map((v, i) => (v === null ? i : null))
+          .filter((v) => v !== null);
+
+        if (empty.length === 0) return;
+
+        // ランダムに1つ選ぶ（弱いCPU）
+        const choice = empty[Math.floor(Math.random() * empty.length)];
+        board[choice] = "×";
+      }
+
+      function endByResult(result) {
+        if (result === "draw") {
+          statusEl.textContent = "引き分けです";
+          gameOver = true;
+          return true;
+        }
+        if (result === "○") {
+          statusEl.textContent = "あなた（○）の勝ち！";
+          gameOver = true;
+          return true;
+        }
+        if (result === "×") {
+          statusEl.textContent = "CPU（×）の勝ち！";
+          gameOver = true;
+          return true;
+        }
+        return false;
       }
 
       function render() {
         boardEl.innerHTML = "";
+
         board.forEach((value, index) => {
           const cell = document.createElement("div");
           cell.className = "cell";
           cell.textContent = value ? value : "";
 
           cell.addEventListener("click", () => {
-            if (gameOver || board[index]) return;
+            if (gameOver || board[index] !== null) return;
 
-            board[index] = current;
-            const result = checkWinner();
-
-            if (result === "draw") {
-              statusEl.textContent = "引き分けです";
-              gameOver = true;
-            } else if (result) {
-              statusEl.textContent = result + " の勝ち！";
-              gameOver = true;
-            } else {
-              current = current === "○" ? "×" : "○";
-              statusEl.textContent = current + " の番です";
+            // 人（○）の手
+            board[index] = "○";
+            let result = checkWinner();
+            if (endByResult(result)) {
+              render();
+              return;
             }
-            render();
+
+            // CPU（×）の手
+            statusEl.textContent = "CPUが考え中…";
+            render(); // 先に表示更新（気分だけでも“考えてる感”）
+
+            // ちょい待ってから打つ（演出）
+            setTimeout(() => {
+              if (gameOver) return;
+
+              cpuMove();
+              result = checkWinner();
+              if (!endByResult(result)) {
+                statusEl.textContent = "あなた（○）の番です";
+              }
+              render();
+            }, 200);
           });
 
-          if (board[index]) {
+          if (board[index] !== null || gameOver) {
             cell.classList.add("disabled");
           }
 
@@ -121,9 +172,8 @@
 
       resetBtn.addEventListener("click", () => {
         board = Array(9).fill(null);
-        current = "○";
         gameOver = false;
-        statusEl.textContent = "○の番です";
+        statusEl.textContent = "あなた（○）の番です";
         render();
       });
 
